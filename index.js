@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 
 // Home page
 app.get('/', (req, res) => {
-    res.render('home', { posts, year: year });
+    res.render('home', { posts });
 });
 
 // post creation page
@@ -58,14 +58,23 @@ app.get('/new', (req, res) => {
 
 // handling form submission   
 app.post('/submit', upload.single("image"), (req, res) => {
-    const { title, description } = req.body;
-    if (!title || !description) {
-        return res.status(400).send("Title and description are required.");
+    try {
+        const { title, description } = req.body;
+        if (!title || !description) {
+            return res.status(400).send("Title and description are required.");
+        }
+
+        console.log("File received:", req.file);
+
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : '/images/default.jpg';
+        const id = posts.length + 1;
+        posts.push({ id, title, description, monDate: formatted, image: imagePath });
+
+        res.redirect('/');
+    } catch (err) {
+        console.error("❌ Upload Error:", err);
+        res.status(500).send("Internal Server Error");
     }
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : '/images/default.jpg';
-    const id = posts.length + 1;
-    posts.push({ id, title, description, monDate: formatted, image: imagePath });
-    res.redirect('/');
 });
 
 // go to view post
