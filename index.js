@@ -32,7 +32,7 @@ let posts = [{ id: 1, title: "One piece", description: "Eiichiro Oda’s One Pie
 // Store the upload file in specfic path
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, "public/uploads"));
+        cb(null, path.join(__dirname, "Public/uploads"));
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
