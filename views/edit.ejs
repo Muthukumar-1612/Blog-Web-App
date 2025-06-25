@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+    <div class="container py-5">
+        <div class="col-md-8 mx-auto">
+            <h2 class="text-center mb-4">Edit Blog Post</h2>
+            <form action="/post/<%= post.id %>/update" method="POST" enctype="multipart/form-data"
+                class="p-4 border rounded shadow bg-white dark-form">
+
+                <div class="form-group mb-3 pt-2">
+                    <input class="form-control" id="title" name="title" value="<%= post.title %>" type="text" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <textarea class="form-control" id="description" name="description" rows="5"
+                        required><%= post.description %></textarea>
+                </div>
+
+
+                <div class="mb-3 text-center">
+                    <img src="<%= post.image %>" alt="Current Image" class="img-fluid rounded shadow"
+                        style="max-height: 200px;" />
+                </div>
+
+
+                <div class="form-group mb-4">
+                    <label for="image" class="form-label">Upload New Image</label>
+                    <div class="custom-file-input">
+                        <input type="file" name="image" id="image">
+                        <span id="fileName" class="custom-file-label">No file selected</span>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <%- include('partials/footer') %>

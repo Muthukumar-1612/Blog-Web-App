@@ -1,0 +1,42 @@
+<%- include('partials/header.ejs') %>
+
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <div class="post-container p-4 rounded shadow-sm">
+                    <div class="text-center mb-4">
+                        <img src="<%= post.image %>" class="img-fluid post-image shadow" alt="Post image">
+                    </div>
+
+                    <h1 class="display-5 fw-bold text-center text-title mb-2">
+                        <%= post.title %>
+                    </h1>
+
+                    <p class="text-muted text-center mb-4 fs-6">📅 Posted on <%= post.monDate %>
+                    </p>
+
+                    <div class="post-content mb-5">
+                        <p class="lead justify-text">
+                            <%= post.description %>
+                        </p>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/post/<%= post.id %>/edit" class="btn btn-warning px-4 min-width-btn">Edit</a>
+                        <form action="/post/<%= post.id %>/delete" method="POST">
+                            <button class="btn btn-danger px-4 min-width-btn">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+    <%- include('partials/footer.ejs') %>
