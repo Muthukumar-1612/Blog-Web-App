@@ -8,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port = 3000;
 app.set("view engine", "ejs");
-app.use(express.static("public"));
+app.use(express.static("Public"));
 app.use(express.urlencoded({ extended: true }));
 
 // generate date and day 
