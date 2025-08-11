@@ -1,6 +1,6 @@
 # Blog Web App
 
-This is a simple **Blog Web Application** built using **Node.js**, **Express.js**, and **EJS**. It allows users to create, read, update, and delete blog posts. The application uses **EJS templates** for rendering views and **stores posts in memory**, making it a lightweight app ideal for learning CRUD operations and Express routing.
+This is a simple **Blog Web Application** built using **Node.js**, **Express.js**, **EJS**, and **PostgreSQL**. It allows users to create, read, update, and delete blog posts. The application uses **EJS templates** for rendering views and stores posts in a **PostgreSQL database**, making it a practical example for learning full-stack CRUD operations, Express routing, and database integration.
 
 ---
 
@@ -11,7 +11,7 @@ This is a simple **Blog Web Application** built using **Node.js**, **Express.js*
 - 🔍 Read individual blog posts
 - ✏️ Edit and update blog entries
 - 🗑️ Delete blog posts
-- 💡 Built with EJS templates and in-memory storage (no database)
+- 💡 Built with EJS templates and PostgreSQL database integration
 
 ---
 
@@ -20,4 +20,4 @@ This is a simple **Blog Web Application** built using **Node.js**, **Express.js*
 - **Backend:** Node.js, Express.js
 - **Templating Engine:** EJS
 - **Styling:** Bootstrap, Custom CSS
-- **Storage:** In-memory (JavaScript array)
+- **Database:** PostgreSQL
