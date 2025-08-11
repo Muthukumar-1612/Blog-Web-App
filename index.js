@@ -100,7 +100,7 @@ app.post('/submit', upload.single("image"), async (req, res) => {
 
         console.log("File received:", req.file);
 
-        const imagePath = req.file ? `/uploads/${req.file.filename}` : '/images/default.jpg';
+        const imagePath = req.file ? req.file.path : "https://via.placeholder.com/400";
 
         await db.query(`
             INSERT INTO blogs (title, description, mondate, image)
@@ -135,7 +135,7 @@ app.post("/post/:id/update", upload.single("image"), async (req, res) => {
     const id = req.params.id
     const { title, description } = req.body;
 
-    let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    let imagePath = req.file ? req.file.path : null;
 
     await db.query(`
             UPDATE blogs 
