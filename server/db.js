@@ -7,8 +7,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 env.config({ path: path.join(__dirname, ".env") });
 
-dotenv.config();
-
 const isRender = process.env.DB_ENV === "render";
 const connectionString = isRender
     ? process.env.RENDER_DB_URL
