@@ -1,4 +1,5 @@
 import express from "express";
+import { db } from "./server/db.js"
 import multer from "multer";
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,7 +12,7 @@ app.set("view engine", "ejs");
 app.use(express.static("Public"));
 app.use(express.urlencoded({ extended: true }));
 
-// generate date and day 
+// generate date and day
 const date = new Date();
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -19,15 +20,8 @@ const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 
 const monthName = months[date.getMonth()];
 const day = date.getDate();
-
-const formatted = `${monthName} ${day}`;
 const year = date.getFullYear();
-
-// Since, I don't use database , Whenever the serever restart the array will be empty so I add two post manually  
-let posts = [{ id: 1, title: "One piece", description: "Eiichiro Oda’s One Piece is more than just an anime — it’s a generational legacy. Following Monkey D. Luffy on his journey to become the Pirate King, this series blends adventure, emotion, humor, and powerful world-building. With over 1000 episodes and counting, it has built a rich universe filled with unforgettable characters like Zoro, Nami, and Ace. It teaches us about dreams, friendship, and resilience.", monDate: "Apr 9", image: "/images/zoro.jpeg" },
-{ id: 2, title: "Solo Leveling", description: "Originally a Korean webtoon, Solo Leveling stormed into the anime world with jaw-dropping animation and an intense storyline. It follows Sung Jin-Woo, the weakest hunter, who gains the power to level up without limit. Dark, stylish, and adrenaline-fueled — it’s a must-watch for fans of modern fantasy and action.", monDate: "Nov 12", image: "/images/solo.jpg" }
-]
-
+const formatted = `${monthName}-${day}-${year}`;
 
 // Store the upload file in specfic path
 const storage = multer.diskStorage({
@@ -46,8 +40,22 @@ app.use((req, res, next) => {
     next();
 });
 
+async function get_post(id) {
+    const result = await db.query(`
+        SELECT * FROM blogs WHERE id = $1
+        `, [id])
+    const post = result.rows[0];
+    return post;
+}
+
 // Home page
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+
+    const result = await db.query(`
+        SELECT * FROM blogs ORDER BY id
+        `)
+    const posts = result.rows
+
     res.render('home', { posts });
 });
 
@@ -57,7 +65,7 @@ app.get('/new', (req, res) => {
 });
 
 // handling form submission   
-app.post('/submit', upload.single("image"), (req, res) => {
+app.post('/submit', upload.single("image"), async (req, res) => {
     try {
         const { title, description } = req.body;
         if (!title || !description) {
@@ -67,8 +75,11 @@ app.post('/submit', upload.single("image"), (req, res) => {
         console.log("File received:", req.file);
 
         const imagePath = req.file ? `/uploads/${req.file.filename}` : '/images/default.jpg';
-        const id = posts.length + 1;
-        posts.push({ id, title, description, monDate: formatted, image: imagePath });
+
+        await db.query(`
+            INSERT INTO blogs (title, description, mondate, image)
+            VALUES ($1, $2, $3, $4)
+            `, [title, description, formatted, imagePath])
 
         res.redirect('/');
     } catch (err) {
@@ -78,42 +89,47 @@ app.post('/submit', upload.single("image"), (req, res) => {
 });
 
 // go to view post
-app.get("/post/:id", (req, res) => {
-    const post = posts.find(p => p.id === parseInt(req.params.id));
+app.get("/post/:id", async (req, res) => {
+
+    const post = await get_post(req.params.id);
     if (!post) return res.status(400).send('Post not found')
     res.render("post", { post })
 })
 
 
 // go to edit page
-app.get("/post/:id/edit", (req, res) => {
-    const post = posts.find(p => p.id === parseInt(req.params.id));
+app.get("/post/:id/edit", async (req, res) => {
+
+    const post = await get_post(req.params.id);
     if (!post) return res.status(400).send('Post not found')
     res.render("edit", { post })
 })
 // update handling
-app.post("/post/:id/update", upload.single("image"), (req, res) => {
-    const post = posts.find(p => p.id === parseInt(req.params.id));
-    if (!post) return res.status(400).send('Post not found')
-    post.title = req.body["title"];
-    post.description = req.body["description"];
-    if (req.file) {
-        post.image = `/uploads/${req.file.filename}`;
-    }
+app.post("/post/:id/update", upload.single("image"), async (req, res) => {
+    const id = req.params.id
+    const { title, description } = req.body;
+
+    let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+    await db.query(`
+            UPDATE blogs 
+            SET title = $1, description = $2, mondate = $3, image = COALESCE($4, image)
+            WHERE id = $5
+            `, [title, description, `Edited ${formatted}`, imagePath, id])
+
     res.redirect("/");
 })
 // delete post
-app.post("/post/:id/delete", (req, res) => {
-    posts = posts.filter(p => p.id !== parseInt(req.params.id));
+app.post("/post/:id/delete", async (req, res) => {
+
+    await db.query(`
+        DELETE FROM blogs
+        WHERE id = $1
+        `, [req.params.id])
+
     res.redirect("/");
 })
 
-
-
-
-
-
-
-app.listen(port, (req, res) => {
+app.listen(port, () => {
     console.log(`Server running on port : ${port}`);
 })
