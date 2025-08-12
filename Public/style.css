@@ -30,14 +30,16 @@ footer {
   min-width: 100px;
 }
 
+/* Make image height fixed, prevent it from pushing card taller */
 .post-thumbnail {
   width: 200px;
-  height: 100%;
+  height: 250px; /* Fixed height */
   object-fit: cover;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
-  display: block;
+  object-position: center;
+  border-radius: 0 10px 10px 0;
+  flex-shrink: 0; /* Prevent shrinking in flex */
 }
+
 
 /* Button spacing inside forms and actions */
 .btn + .btn {
@@ -50,6 +52,8 @@ footer {
   background-color: #fff;
   border-radius: 10px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Align description text */
@@ -107,16 +111,8 @@ footer {
 
 /* Fixed height for post cards */
 .h-md-250 {
-  height: 250px;
-}
-
-/* Ensure image fills full height of its column */
-.post-thumbnail {
-  width: 200px;
   height: 100%;
-  object-fit: cover;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
+  min-height: 250px;
 }
 
 /* dark mode */
@@ -237,21 +233,42 @@ body.dark-mode .custom-file-label {
 body.dark-mode .custom-file-label:hover {
   background-color: #3a3a3a;
 }
+
+/* Ensure text column doesn't grow too tall */
 .truncate-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4; /* show 4 lines max */
+  max-height: calc(1.2em * 4); /* Match clamp lines */
+  text-align: justify;
 }
 
-/* On smaller screens, show 4 lines only */
+/* On smaller screens */
 @media (max-width: 576px) {
   .truncate-description {
     -webkit-line-clamp: 4;
   }
 }
 
+/* Mobile responsive fixes */
+@media (max-width: 992px) {
+  .col-auto.d-none.d-lg-block {
+    width: 100%;
+    display: none !important;
+  }
+  
+  .post-thumbnail {
+    width: 100%;
+    height: 200px;
+    border-radius: 10px 10px 0 0;
+  }
+  
+  .row.g-0.border.rounded.overflow-hidden.flex-md-row {
+    flex-direction: column;
+  }
+}
 .card-hover {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -261,3 +278,31 @@ body.dark-mode .custom-file-label:hover {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
 
+/* Content column fixes */
+.col.p-4.d-flex.flex-column.position-static {
+  flex: 1;
+  min-width: 0; /* Critical for text overflow */
+  padding: 1rem !important; /* Ensure consistent padding */
+}
+
+.col.p-4.d-flex.flex-column.position-static h3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  max-height: 3em;
+  line-height: 1.5em;
+}
+/* Row alignment fix */
+.row.g-0.border.rounded.overflow-hidden.flex-md-row {
+  display: flex;
+  align-items: flex-start; /* Align at top */
+}
+.col-auto.d-none.d-lg-block {
+  display: flex !important;
+  align-items: center; /* Center image vertically */
+  padding: 0;
+  overflow: hidden;
+}
