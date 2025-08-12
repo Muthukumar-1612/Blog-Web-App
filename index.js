@@ -1,12 +1,6 @@
 import express from "express";
 import { db } from "./server/db.js"
 import multer from "multer";
-
-// import path from 'path';
-// import { fileURLToPath } from 'url';
-// import { dirname } from 'path';
-// const __dirname = dirname(fileURLToPath(import.meta.url));
-
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import dotenv from "dotenv";
@@ -19,28 +13,10 @@ app.set("view engine", "ejs");
 app.use(express.static("Public"));
 app.use(express.urlencoded({ extended: true }));
 
-// generate date and day
+// Generate date string
 const date = new Date();
-
-const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const monthName = months[date.getMonth()];
-const day = date.getDate();
-const year = date.getFullYear();
-const formatted = `${monthName}-${day}-${year}`;
-
-// // Store the upload file in specfic path
-// const storage = multer.diskStorage({
-//     destination: function (req, file, cb) {
-//         cb(null, path.join(__dirname, "Public/uploads"));
-//     },
-//     filename: function (req, file, cb) {
-//         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-//         cb(null, uniqueSuffix + path.extname(file.originalname));
-//     }
-// })
-
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const formatted = `${months[date.getMonth()]}-${date.getDate()}-${date.getFullYear()}`;
 
 // Cloudinary config
 cloudinary.config({
@@ -49,26 +25,23 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Cloudinary storage for multer
+// Multer Cloudinary storage
 const storage = new CloudinaryStorage({
     cloudinary,
-    params: async (req, file) => {
-        return {
-            folder: "blog_uploads",
-            allowed_formats: ["jpg", "jpeg", "png"],
-            public_id: `blog_${Date.now()}_${Math.round(Math.random() * 1e6)}`, // Always starts with text
-            resource_type: "image"
-        };
-    },
+    params: async (req, file) => ({
+        folder: "blog_uploads",
+        allowed_formats: ["jpg", "jpeg", "png"],
+        public_id: `blog_${Date.now()}_${Math.round(Math.random() * 1e6)}`,
+        resource_type: "image"
+    }),
     transformation: [
         { width: 800, height: 600, crop: "fill", gravity: "auto" }
     ]
-
 });
 
-// File filter for extra safety
 const upload = multer({
     storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
     fileFilter: (req, file, cb) => {
         const ext = file.originalname.split('.').pop().toLowerCase();
         if (['jpg', 'jpeg', 'png'].includes(ext)) {
@@ -79,101 +52,98 @@ const upload = multer({
     }
 });
 
+// Year for footer
 app.use((req, res, next) => {
     res.locals.year = date.getFullYear();
     next();
 });
 
 async function get_post(id) {
-    const result = await db.query(`
-        SELECT * FROM blogs WHERE id = $1
-        `, [id])
-    const post = result.rows[0];
-    return post;
+    const result = await db.query(`SELECT * FROM blogs WHERE id = $1`, [id]);
+    return result.rows[0];
+}
+
+// Middleware to handle file size and type errors
+function handleUpload(req, res, next) {
+    upload.single("image")(req, res, (err) => {
+        if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).send('File size should be less than or equal to 10 MB.');
+            }
+            return res.status(400).send(err.message);
+        }
+        next();
+    });
 }
 
 // Home page
 app.get('/', async (req, res) => {
-
-    const result = await db.query(`
-        SELECT * FROM blogs ORDER BY id
-        `)
-    const posts = result.rows
-
-    res.render('home', { posts });
+    const result = await db.query(`SELECT * FROM blogs ORDER BY id`);
+    res.render('home', { posts: result.rows });
 });
 
-// post creation page
-app.get('/new', (req, res) => {
-    res.render('createPost');
-});
+// Create post page
+app.get('/new', (req, res) => res.render('createPost'));
 
-// handling form submission   
-app.post('/submit', upload.single("image"), async (req, res) => {
+// Create post
+app.post('/submit', handleUpload, async (req, res) => {
     try {
         const { title, description } = req.body;
         if (!title || !description) {
             return res.status(400).send("Title and description are required.");
         }
 
-        console.log("File received:", req.file);
-
         const imagePath = req.file ? req.file.path : "https://via.placeholder.com/400";
-
         await db.query(`
             INSERT INTO blogs (title, description, mondate, image)
             VALUES ($1, $2, $3, $4)
-            `, [title, description, formatted, imagePath])
+        `, [title, description, formatted, imagePath]);
 
         res.redirect('/');
-    } catch (err) {
-        console.error("❌ Upload Error:", err);
+    } catch (error) {
+        console.error(error);
         res.status(500).send("Internal Server Error");
     }
 });
 
-// go to view post
+// View post
 app.get("/post/:id", async (req, res) => {
-
     const post = await get_post(req.params.id);
-    if (!post) return res.status(400).send('Post not found')
-    res.render("post", { post })
-})
+    if (!post) return res.status(400).send('Post not found');
+    res.render("post", { post });
+});
 
-
-// go to edit page
+// Edit page
 app.get("/post/:id/edit", async (req, res) => {
-
     const post = await get_post(req.params.id);
-    if (!post) return res.status(400).send('Post not found')
-    res.render("edit", { post })
-})
-// update handling
-app.post("/post/:id/update", upload.single("image"), async (req, res) => {
-    const id = req.params.id
-    const { title, description } = req.body;
+    if (!post) return res.status(400).send('Post not found');
+    res.render("edit", { post });
+});
 
-    let imagePath = req.file ? req.file.path : null;
+// Update post
+app.post("/post/:id/update", handleUpload, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { title, description } = req.body;
+        const imagePath = req.file ? req.file.path : null;
 
-    await db.query(`
+        await db.query(`
             UPDATE blogs 
             SET title = $1, description = $2, mondate = $3, image = COALESCE($4, image)
             WHERE id = $5
-            `, [title, description, `Edited ${formatted}`, imagePath, id])
+        `, [title, description, `Edited ${formatted}`, imagePath, id]);
 
-    res.redirect("/");
-})
-// delete post
+        res.redirect("/");
+    } catch (err) {
+        console.error("❌ Update Error:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// Delete post
 app.post("/post/:id/delete", async (req, res) => {
-
-    await db.query(`
-        DELETE FROM blogs
-        WHERE id = $1
-        `, [req.params.id])
-
+    await db.query(`DELETE FROM blogs WHERE id = $1`, [req.params.id]);
     res.redirect("/");
-})
+});
 
-app.listen(port, () => {
-    console.log(`Server running on port : ${port}`);
-})
+app.listen(port, () => console.log(`Server running on port : ${port}`));
