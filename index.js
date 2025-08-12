@@ -52,14 +52,32 @@ cloudinary.config({
 // Cloudinary storage for multer
 const storage = new CloudinaryStorage({
     cloudinary,
-    params: {
-        folder: "blog_uploads",
-        allowed_formats: ["jpg", "jpeg", "png"],
-        public_id: (req, file) => Date.now()
-    }
+    params: async (req, file) => {
+        return {
+            folder: "blog_uploads",
+            allowed_formats: ["jpg", "jpeg", "png"],
+            public_id: `blog_${Date.now()}_${Math.round(Math.random() * 1e6)}`, // Always starts with text
+            resource_type: "image"
+        };
+    },
+    transformation: [
+        { width: 800, height: 600, crop: "fill", gravity: "auto" }
+    ]
+
 });
 
-const upload = multer({ storage: storage })
+// File filter for extra safety
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const ext = file.originalname.split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png'].includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only JPG, JPEG, and PNG are allowed!'));
+        }
+    }
+});
 
 app.use((req, res, next) => {
     res.locals.year = date.getFullYear();
