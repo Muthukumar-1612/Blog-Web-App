@@ -8,12 +8,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 env.config({ path: path.join(__dirname, ".env") });
 
 const isProd = process.env.NODE_ENV === "production";
+
 export const db = new Pool({
-    connectionString: isProd ? process.env.NEON_DB_URL : process.env.LOCAL_DB_URL,
-    ssl: isProd ? {
-        rejectUnauthorized: false,
-        sslmode: 'require'
-    } : false
+  connectionString: isProd ? process.env.NEON_DB_URL : process.env.LOCAL_DB_URL,
+  ssl: isProd ? { rejectUnauthorized: false } : false,
 });
-
-
