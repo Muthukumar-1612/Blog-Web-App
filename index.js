@@ -59,7 +59,7 @@ app.use((req, res, next) => {
 });
 
 async function get_post(id) {
-    const result = await db.query(`SELECT * FROM blogs WHERE id = $1`, [id]);
+    const result = await db.query(`SELECT * FROM public.blogs WHERE id = $1`, [id]);
     return result.rows[0];
 }
 
@@ -78,7 +78,7 @@ function handleUpload(req, res, next) {
 
 // Home page
 app.get('/', async (req, res) => {
-    const result = await db.query(`SELECT * FROM blogs ORDER BY id`);
+    const result = await db.query(`SELECT * FROM public.blogs ORDER BY id`);
     res.render('home', { posts: result.rows });
 });
 
@@ -95,7 +95,7 @@ app.post('/submit', handleUpload, async (req, res) => {
 
         const imagePath = req.file ? req.file.path : "https://via.placeholder.com/400";
         await db.query(`
-            INSERT INTO blogs (title, description, mondate, image)
+            INSERT INTO public.blogs (title, description, mondate, image)
             VALUES ($1, $2, $3, $4)
         `, [title, description, formatted, imagePath]);
 
@@ -128,7 +128,7 @@ app.post("/post/:id/update", handleUpload, async (req, res) => {
         const imagePath = req.file ? req.file.path : null;
 
         await db.query(`
-            UPDATE blogs 
+            UPDATE public.blogs 
             SET title = $1, description = $2, mondate = $3, image = COALESCE($4, image)
             WHERE id = $5
         `, [title, description, `Edited ${formatted}`, imagePath, id]);
@@ -142,7 +142,7 @@ app.post("/post/:id/update", handleUpload, async (req, res) => {
 
 // Delete post
 app.post("/post/:id/delete", async (req, res) => {
-    await db.query(`DELETE FROM blogs WHERE id = $1`, [req.params.id]);
+    await db.query(`DELETE FROM public.blogs WHERE id = $1`, [req.params.id]);
     res.redirect("/");
 });
 
